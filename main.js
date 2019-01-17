@@ -25,7 +25,7 @@
 		analyser.getFloatFrequencyData(arr);
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-		arr = arr.map(v => canvas.height - ((v - min) * (max - min) / 8) * devicePixelRatio);
+		arr = arr.map(v => canvas.height - ((v - min) * (max - min) / 8) * (1 / media.volume) * devicePixelRatio);
 
 		ctx.beginPath();
 		ctx.moveTo(0, arr[0]);
@@ -74,7 +74,7 @@
 		media.play();
 		return false;
 	});
-	document.addEventListener('click', actx.resume, { once: true });
+	document.addEventListener('click', () => actx.resume(), { once: true });
 
 	
 	if (location.hash) load();
