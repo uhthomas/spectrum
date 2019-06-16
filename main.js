@@ -1,7 +1,7 @@
 (() => {
-	var actx = new AudioContext();
-	var src = actx.createMediaElementSource(media);
-	var analyser = actx.createAnalyser();
+	const actx = new AudioContext();
+	const src = actx.createMediaElementSource(media);
+	const analyser = actx.createAnalyser();
 	analyser.fftSize = {
 		41000: 4 << 10,
 		48000: 4 << 10,
@@ -18,8 +18,19 @@
 	const spacing = 40;
 	(draw = () => {
 		requestAnimationFrame(draw);
-		canvas.width = innerWidth * devicePixelRatio;
-		canvas.height = innerHeight * devicePixelRatio;
+		const w = innerWidth * devicePixelRatio;
+		const h = innerHeight * devicePixelRatio;
+
+		const r = media.videoWidth / media.videoHeight;
+		const nr = w / h;
+
+		canvas.width = (nr > r ? h * r : w) + .5 | 0;
+		canvas.height = (nr < r ? w / r : h) + .5 | 0;
+
+		const x = (w - canvas.width) / 2 + .5 | 0;
+		const y = (h - canvas.height) / 2 + .5 | 0;
+
+		canvas.style.transform = 'translate3d(' + x + 'px, ' + y + 'px, 0)';
 
 		var arr = new Float32Array((4 * (1 / devicePixelRatio) * canvas.width / spacing + 2) | 0);
 		analyser.getFloatFrequencyData(arr);
@@ -31,12 +42,12 @@
 		ctx.moveTo(0, arr[0]);
 		var i = 1;
 		for (; i < arr.length - 2; i++) {
-			var x = i * spacing * devicePixelRatio;
-			var x2 = (i + 1) * spacing * devicePixelRatio;
-			var y = arr[i];
-			var y2 = arr[i + 1];
-			var xc = (x + x2) / 2;
-			var yc = (y + y2) / 2;
+			const x = i * spacing * devicePixelRatio;
+			const x2 = (i + 1) * spacing * devicePixelRatio;
+			const y = arr[i];
+			const y2 = arr[i + 1];
+			const xc = (x + x2) / 2;
+			const yc = (y + y2) / 2;
 			ctx.quadraticCurveTo(x, y, xc, yc);
 		}
 		ctx.quadraticCurveTo(i * spacing * devicePixelRatio, arr[i], (i + 1) * spacing * devicePixelRatio, arr[i+1]);
