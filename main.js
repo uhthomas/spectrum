@@ -16,27 +16,34 @@
 	const min = -66;
 	const max = 12;
 	const spacing = 40;
-	
+
 	(draw = () => {
 		requestAnimationFrame(draw);
 
-		const w = innerWidth * devicePixelRatio;
-		const h = innerHeight * devicePixelRatio;
+		const w = innerWidth;
+		const h = innerHeight;
 
 		const r = media.videoWidth / media.videoHeight;
 		const nr = w / h;
 
-		canvas.width = (nr > r ? h * r : w) + .5 | 0;
-		canvas.height = (nr < r ? w / r : h) + .5 | 0;
+		canvas.width = (nr > r ? h * r : w) * devicePixelRatio + .5 | 0;
+		canvas.height = (nr < r ? w / r : h) * devicePixelRatio + .5 | 0;
 
 		const x = (w - canvas.width) / 2 + .5 | 0;
 		const y = (h - canvas.height) / 2 + .5 | 0;
 
-		canvas.style.transform = 'translate3d(' + x + 'px, ' + y + 'px, 0)';
+		const scale = 1 / devicePixelRatio;
+		
+		canvas.style.transform = `matrix3d(
+			${scale}, 0, 0, 0,
+			0, ${scale}, 0, 0,
+			0, 0, 1, 0,
+			${x}, ${y}, 0, 1
+		)`;
 
-		var arr = new Float32Array((4 * (1 / devicePixelRatio) * canvas.width / spacing + 2) | 0);
+		// add 2 to compensate for start and end points then add .5 for rounding.
+		var arr = new Float32Array(scale * canvas.width / spacing + 2.5 | 0);
 		analyser.getFloatFrequencyData(arr);
-		ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 		arr = arr.map(v => canvas.height - ((v - min) * (max - min) / 8) * devicePixelRatio);
 
@@ -46,15 +53,18 @@
 		for (; i < arr.length - 1; i++) {
 			const x = i * spacing * devicePixelRatio;
 			const x2 = (i + 1) * spacing * devicePixelRatio;
+			const xc = (x + x2) / 2;
+
 			const y = arr[i];
 			const y2 = arr[i + 1];
-			const xc = (x + x2) / 2;
 			const yc = (y + y2) / 2;
+
 			ctx.quadraticCurveTo(x, y, xc, yc);
 		}
 		ctx.quadraticCurveTo(i * spacing * devicePixelRatio, arr[i], (i + 1) * spacing * devicePixelRatio, arr[i+1]);
 		ctx.lineTo((i + 1) * spacing * devicePixelRatio, canvas.height + 1);
 		ctx.lineTo(-1, canvas.height + 1);
+
 		ctx.fillStyle = 'black';
 		ctx.strokeStyle = 'white';
 		ctx.lineWidth = devicePixelRatio;
