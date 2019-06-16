@@ -16,8 +16,10 @@
 	const min = -66;
 	const max = 12;
 	const spacing = 40;
+	
 	(draw = () => {
 		requestAnimationFrame(draw);
+
 		const w = innerWidth * devicePixelRatio;
 		const h = innerHeight * devicePixelRatio;
 
@@ -41,7 +43,7 @@
 		ctx.beginPath();
 		ctx.moveTo(0, arr[0]);
 		var i = 1;
-		for (; i < arr.length - 2; i++) {
+		for (; i < arr.length - 1; i++) {
 			const x = i * spacing * devicePixelRatio;
 			const x2 = (i + 1) * spacing * devicePixelRatio;
 			const y = arr[i];
