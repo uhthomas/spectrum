@@ -1,5 +1,5 @@
 (() => {
-	const actx = new AudioContext();
+	const actx = new (window.AudioContext || window.webkitAudioContext)();
 	const src = actx.createMediaElementSource(media);
 	const analyser = actx.createAnalyser();
 	analyser.fftSize = {
@@ -47,6 +47,8 @@
 
 		arr = arr.map(v => canvas.height - ((v - min) * (max - min) / 8) * devicePixelRatio);
 
+		ctx.drawImage(media, 0, 0, canvas.width, canvas.height);
+
 		ctx.beginPath();
 		ctx.moveTo(0, arr[0]);
 		var i = 1;
@@ -65,15 +67,19 @@
 		ctx.lineTo((i + 1) * spacing * devicePixelRatio, canvas.height + 1);
 		ctx.lineTo(-1, canvas.height + 1);
 
-		ctx.fillStyle = 'black';
 		ctx.strokeStyle = 'white';
 		ctx.lineWidth = devicePixelRatio;
-		ctx.fill();
 		ctx.stroke();
+
+		ctx.globalCompositeOperation = 'destination-out';
+		ctx.fill();
 	})();
 
 	load = e => {
-		var u = location.hash.substring(1);
+		const raw = 'raw:';
+		let u = location.hash.substring(1);
+		if (u.startsWith(raw))
+			return media.src = u.substr(raw.length);
 		media.src = 'https://r.6f.io?u=' + u;
 		media.poster = 'https://r.6f.io?thumbnail=true&u=' + u;
 	}
