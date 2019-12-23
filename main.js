@@ -90,11 +90,11 @@
 	}
 
 	window.addEventListener('hashchange', load)
-	document.addEventListener('dragover', preventDefault);
-	document.addEventListener('dragenter', preventDefault);
-	document.addEventListener('dragend', preventDefault);
-	document.addEventListener('dragleave', preventDefault);
-	document.addEventListener('drop', e => {
+	window.addEventListener('dragover', preventDefault);
+	window.addEventListener('dragenter', preventDefault);
+	window.addEventListener('dragend', preventDefault);
+	window.addEventListener('dragleave', preventDefault);
+	window.addEventListener('drop', e => {
 		e.preventDefault();
 		var files = e.dataTransfer.files;
 		if (!files.length) return false;
@@ -103,7 +103,7 @@
 		media.play();
 		return false;
 	});
-	document.addEventListener('click', () => actx.resume(), { once: true });
+	window.addEventListener('click', () => actx.resume(), { once: true });
 
 	
 	if (location.hash) load();
