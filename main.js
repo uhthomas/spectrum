@@ -47,8 +47,6 @@
 
 		arr = arr.map(v => canvas.height - ((v - min) * (max - min) / 8) * devicePixelRatio);
 
-		ctx.drawImage(media, 0, 0, canvas.width, canvas.height);
-
 		ctx.beginPath();
 		ctx.moveTo(0, arr[0]);
 		var i = 1;
@@ -66,6 +64,8 @@
 		ctx.quadraticCurveTo(i * spacing * devicePixelRatio, arr[i], (i + 1) * spacing * devicePixelRatio, arr[i+1]);
 		ctx.lineTo((i + 1) * spacing * devicePixelRatio, canvas.height + 1);
 		ctx.lineTo(-1, canvas.height + 1);
+
+		ctx.drawImage(media, 0, 0, canvas.width, canvas.height);
 
 		ctx.strokeStyle = 'white';
 		ctx.lineWidth = devicePixelRatio;
