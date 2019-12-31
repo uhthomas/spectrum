@@ -42,14 +42,14 @@
 		)`;
 
 		// add 2 to compensate for start and end points then add .5 for rounding.
-		var arr = new Float32Array(scale * canvas.width / spacing + 2.5 | 0);
+		let arr = new Float32Array(scale * canvas.width / spacing + 2.5 | 0);
 		analyser.getFloatFrequencyData(arr);
 
 		arr = arr.map(v => canvas.height - ((v - min) * (max - min) / 8) * devicePixelRatio);
 
 		ctx.beginPath();
 		ctx.moveTo(0, arr[0]);
-		var i = 1;
+		let i = 1;
 		for (; i < arr.length - 1; i++) {
 			const x = i * spacing * devicePixelRatio;
 			const x2 = (i + 1) * spacing * devicePixelRatio;
@@ -75,16 +75,16 @@
 		ctx.fill();
 	})();
 
-	load = e => {
+	const load = e => {
 		const raw = 'raw:';
-		let u = location.hash.substring(1);
+		const u = location.hash.substring(1);
 		if (u.startsWith(raw))
 			return media.src = u.substr(raw.length);
 		media.src = 'https://r.6f.io?u=' + u;
 		media.poster = 'https://r.6f.io?thumbnail=true&u=' + u;
 	}
 
-	preventDefault = e => {
+	const preventDefault = e => {
 		e.preventDefault();
 		return false;
 	}
@@ -96,7 +96,7 @@
 	window.addEventListener('dragleave', preventDefault);
 	window.addEventListener('drop', e => {
 		e.preventDefault();
-		var files = e.dataTransfer.files;
+		const files = e.dataTransfer.files;
 		if (!files.length) return false;
 		URL.revokeObjectURL(media.src);
 		media.src = URL.createObjectURL(files[0]);
