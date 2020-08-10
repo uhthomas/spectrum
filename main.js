@@ -6,7 +6,8 @@
 		41000: 4 << 10,
 		48000: 4 << 10,
 		96000: 8 << 10,
-		192000: 16 << 10
+		192000: 16 << 10,
+		384000: 32 << 10
 	}[actx.sampleRate] || 4 << 10;
 	analyser.smoothingTimeConstant = .67;
 	src.connect(analyser);
