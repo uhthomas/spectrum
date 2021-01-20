@@ -40,11 +40,11 @@ const spacing = 40;
   const r = media.videoWidth / media.videoHeight
   const nr = w / h
 
-  const contentWidth = (nr > r ? h * r : w) * devicePixelRatio + .5 | 0
-  const contentHeight = (nr < r ? w / r : h) * devicePixelRatio + .5 | 0
+  const contentWidth = (nr > r ? h * r : w) * devicePixelRatio
+  const contentHeight = (nr < r ? w / r : h) * devicePixelRatio
 
-  const x = (w - contentWidth) / 2 + .5 | 0
-  const y = (h - contentHeight) / 2 + .5 | 0
+  const x = (w - contentWidth) / 2
+  const y = (h - contentHeight) / 2
 
   const scale = 1 / devicePixelRatio
 
