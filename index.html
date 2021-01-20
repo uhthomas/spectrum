@@ -24,17 +24,18 @@
 			top: 0;
 		}
 
-		canvas {
+		#filter {
 			position: absolute;
 			pointer-events: none;
 			-webkit-backdrop-filter: blur(50px) brightness(70%);
 			backdrop-filter: blur(50px) brightness(70%);
+			clip-path: url(#clip);
 		}
 	</style>
 </head>
 <body>
 	<video id="media" controls crossorigin="anonymous"></video>
-	<canvas id="canvas"></canvas>
-	<script type="text/javascript" src="main.js"></script>
+	<div id=filter></div>
+	<script type="text/javascript" src="main_export.js"></script>
 </body>
 </html>

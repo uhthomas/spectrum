@@ -1,4 +1,5 @@
 let svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+svg.style.position = 'fixed'
 
 let clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath')
 clipPath.setAttribute('id', 'clip')
@@ -12,7 +13,7 @@ p.setAttribute('fill', 'transparent')
 
 clipPath.appendChild(p)
 
-document.body.appendChild(svg)
+document.body.insertBefore(svg, document.body.children[0])
 
 const actx = new (window.AudioContext || window.webkitAudioContext)()
 const src = actx.createMediaElementSource(media)
