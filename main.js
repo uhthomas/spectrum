@@ -34,8 +34,8 @@ const spacing = 40;
 (draw = () => {
   requestAnimationFrame(draw)
 
-  const w = innerWidth
-  const h = innerHeight
+  const w = media.scrollWidth
+  const h = media.scrollHeight
 
   const r = media.videoWidth / media.videoHeight
   const nr = w / h
