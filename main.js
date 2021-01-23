@@ -40,22 +40,22 @@ const spacing = 40;
   const r = media.videoWidth / media.videoHeight
   const nr = w / h
 
-  const contentWidth = (nr > r ? h * r : w) * devicePixelRatio
-  const contentHeight = (nr < r ? w / r : h) * devicePixelRatio
+  const contentWidth = (nr > r ? h * r : w)
+  const contentHeight = (nr < r ? w / r : h)
 
   const x = (w - contentWidth) / 2
   const y = (h - contentHeight) / 2
 
-  const scale = 1 / devicePixelRatio
-
   filter.style.width = contentWidth + 'px'
   filter.style.height = contentHeight + 'px'
   filter.style.transform = `matrix3d(
-		${scale}, 0, 0, 0,
-		0, ${scale}, 0, 0,
+		1, 0, 0, 0,
+		0, 1, 0, 0,
 		0, 0, 1, 0,
 		${x}, ${y}, 0, 1
 	)`
+
+  const scale = 1 / devicePixelRatio
 
   // add 2 to compensate for start and end points then add .5 for rounding.
   let arr = new Float32Array(scale * contentWidth / spacing + 2.5 | 0)
@@ -65,7 +65,7 @@ const spacing = 40;
     return
   }
 
-  arr = arr.map(v => contentHeight - ((v - min) * (max - min) / 8) * devicePixelRatio)
+  arr = arr.map(v => contentHeight - (((v - min) * (max - min) / 8) - Math.abs((Math.log(media.volume)/Math.LN10)*20)) * devicePixelRatio)
 
   let d = `M 0 ${arr[0]} `
   for (let i = 1; i < arr.length - 1; i++) {
