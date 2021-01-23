@@ -67,7 +67,7 @@ const spacing = 40;
 
   arr = arr.map(v => Math.max(0, contentHeight - ((v - min) * (max - min) / 8) * devicePixelRatio))
 
-  let d = `M0 ${arr[0]} `
+  let d = ''
   for (let i = 0; i < arr.length - 1; i++) {
     const x1 = i * spacing * devicePixelRatio
     const x2 = (i + 1) * spacing * devicePixelRatio
@@ -77,7 +77,7 @@ const spacing = 40;
     const y2 = arr[i + 1]
     const y = (arr[i] + arr[i + 1]) / 2
 
-    d += !i ? `Q${x1} ${y1} ${x} ${y} T` : `${x} ${y} `
+    d += !i ? `M${x1} ${y1} Q${x1} ${y1} ${x} ${y} T` : `${x} ${y} `
   }
   d += `L${arr.length * spacing * devicePixelRatio} ${contentHeight} L0 ${contentHeight} L0 ${arr[0]} Z`
 
