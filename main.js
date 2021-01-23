@@ -79,7 +79,7 @@ const spacing = 40;
 
     d += !i ? `Q ${x1} ${y1} ${x} ${y} T` : ` ${x} ${y}`
   }
-  d += `L ${arr.length * spacing * devicePixelRatio} ${contentHeight}, L 0 ${contentHeight} Z`
+  d += ` L ${arr.length * spacing * devicePixelRatio} ${contentHeight}, L 0 ${contentHeight} Z`
 
   p.setAttribute('d', d)
 })()
