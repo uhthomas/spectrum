@@ -34,17 +34,17 @@ const spacing = 40;
 (draw = () => {
   requestAnimationFrame(draw)
 
-  const w = media.scrollWidth
-  const h = media.scrollHeight
+  const rect = media.getBoundingClientRect()
 
+  // media aspect ratio, rect aspect ratio
   const r = media.videoWidth / media.videoHeight
-  const nr = w / h
+  const nr = rect.width / rect.height
 
-  const contentWidth = (nr > r ? h * r : w)
-  const contentHeight = (nr < r ? w / r : h)
+  const contentWidth = nr > r ? rect.height * r : rect.width
+  const contentHeight = nr < r ? rect.width / r : rect.height
 
-  const x = (w - contentWidth) / 2
-  const y = (h - contentHeight) / 2
+  const x = ((rect.width - contentWidth) / 2) + 0.5 | 0
+  const y = ((rect.height - contentHeight) / 2) + 0.5 | 0
 
   filter.style.width = contentWidth + 'px'
   filter.style.height = contentHeight + 'px'
