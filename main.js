@@ -65,7 +65,7 @@ const spacing = 40;
     return
   }
 
-  arr = arr.map(v => contentHeight - (((v - min) * (max - min) / 8) - Math.abs((Math.log(media.volume) / Math.LN10) * 20)) * devicePixelRatio)
+  arr = arr.map(v => contentHeight - ((v - min) * (max - min) / 8) * devicePixelRatio)
 
   let d = `M 0 ${arr[0]} `
   for (let i = 0; i < arr.length - 1; i++) {
