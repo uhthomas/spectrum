@@ -65,16 +65,19 @@ const spacing = 40;
     return
   }
 
-  arr = arr.map(v => contentHeight - (((v - min) * (max - min) / 8) - Math.abs((Math.log(media.volume)/Math.LN10)*20)) * devicePixelRatio)
+  arr = arr.map(v => contentHeight - (((v - min) * (max - min) / 8) - Math.abs((Math.log(media.volume) / Math.LN10) * 20)) * devicePixelRatio)
 
   let d = `M 0 ${arr[0]} `
-  for (let i = 1; i < arr.length - 1; i++) {
-    const x = i * spacing * devicePixelRatio
+  for (let i = 0; i < arr.length - 1; i++) {
+    const x1 = i * spacing * devicePixelRatio
     const x2 = (i + 1) * spacing * devicePixelRatio
-    const xc = (x + x2) / 2
+    const x = (x1 + x2) / 2
 
-    const yc = (arr[i] + arr[i + 1]) / 2
-    d += `Q ${x} ${arr[i]} ${xc} ${yc}, `
+    const y1 = arr[i]
+    const y2 = arr[i + 1]
+    const y = (arr[i] + arr[i + 1]) / 2
+
+    d += !i ? `Q ${x1} ${y1} ${x} ${y} T` : ` ${x} ${y}`
   }
   d += `L ${arr.length * spacing * devicePixelRatio} ${contentHeight}, L 0 ${contentHeight} Z`
 
