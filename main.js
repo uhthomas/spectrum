@@ -65,9 +65,9 @@ const spacing = 40;
     return
   }
 
-  arr = arr.map(v => contentHeight - ((v - min) * (max - min) / 8) * devicePixelRatio)
+  arr = arr.map(v => Math.max(0, contentHeight - ((v - min) * (max - min) / 8) * devicePixelRatio))
 
-  let d = `M 0 ${arr[0]} `
+  let d = `M0 ${arr[0]} `
   for (let i = 0; i < arr.length - 1; i++) {
     const x1 = i * spacing * devicePixelRatio
     const x2 = (i + 1) * spacing * devicePixelRatio
@@ -77,9 +77,9 @@ const spacing = 40;
     const y2 = arr[i + 1]
     const y = (arr[i] + arr[i + 1]) / 2
 
-    d += !i ? `Q ${x1} ${y1} ${x} ${y} T` : ` ${x} ${y}`
+    d += !i ? `Q${x1} ${y1} ${x} ${y} T` : `${x} ${y} `
   }
-  d += ` L ${arr.length * spacing * devicePixelRatio} ${contentHeight}, L 0 ${contentHeight} Z`
+  d += `L${arr.length * spacing * devicePixelRatio} ${contentHeight} L0 ${contentHeight} L0 ${arr[0]} Z`
 
   p.setAttribute('d', d)
 })()
