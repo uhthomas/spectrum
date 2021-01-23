@@ -76,7 +76,7 @@ const spacing = 40;
     const yc = (arr[i] + arr[i + 1]) / 2
     d += `Q ${x} ${arr[i]} ${xc} ${yc}, `
   }
-  d += `L ${arr.length * spacing * devicePixelRatio} ${contentHeight}, L 0 ${contentHeight}, L 0 0`
+  d += `L ${arr.length * spacing * devicePixelRatio} ${contentHeight}, L 0 ${contentHeight} Z`
 
   p.setAttribute('d', d)
 })()
