@@ -13,7 +13,7 @@ svg.appendChild(clipPath)
 document.body.appendChild(svg)
 
 const actx = new (window.AudioContext || window.webkitAudioContext)()
-const src = actx.createMediaElementSource(media)
+
 const analyser = actx.createAnalyser()
 analyser.fftSize = {
   41000: 4 << 10,
@@ -23,8 +23,10 @@ analyser.fftSize = {
   384000: 32 << 10
 }[actx.sampleRate] || 4 << 10
 analyser.smoothingTimeConstant = .67
-src.connect(analyser)
 analyser.connect(actx.destination)
+
+const src = actx.createMediaElementSource(media)
+src.connect(analyser)
 
 const min = -66
 const max = 12
