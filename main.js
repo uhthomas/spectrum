@@ -1,11 +1,11 @@
-let svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
 
-let clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath')
+const clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath')
 clipPath.setAttribute('id', 'clip')
 
 svg.appendChild(clipPath)
 
-let p = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+const p = document.createElementNS('http://www.w3.org/2000/svg', 'path')
 p.setAttribute('stroke', 'white')
 p.setAttribute('stroke-width', '2')
 p.setAttribute('fill', 'transparent')
@@ -18,12 +18,12 @@ const actx = new (window.AudioContext || window.webkitAudioContext)()
 const src = actx.createMediaElementSource(media)
 const analyser = actx.createAnalyser()
 analyser.fftSize = {
-    41000: 4 << 10,
-    48000: 4 << 10,
-    96000: 8 << 10,
-    192000: 16 << 10,
-    384000: 32 << 10
-  }[actx.sampleRate] || 4 << 10
+  41000: 4 << 10,
+  48000: 4 << 10,
+  96000: 8 << 10,
+  192000: 16 << 10,
+  384000: 32 << 10
+}[actx.sampleRate] || 4 << 10
 analyser.smoothingTimeConstant = .67
 src.connect(analyser)
 analyser.connect(actx.destination)
