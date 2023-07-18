@@ -12,20 +12,20 @@ svg.appendChild(clipPath)
 
 document.body.appendChild(svg)
 
-const actx = new (window.AudioContext || window.webkitAudioContext)()
+const audioctx = new AudioContext()
 
-const analyser = actx.createAnalyser()
+const analyser = audioctx.createAnalyser()
 analyser.fftSize = {
   41000: 4 << 10,
   48000: 4 << 10,
   96000: 8 << 10,
   192000: 16 << 10,
   384000: 32 << 10
-}[actx.sampleRate] || 4 << 10
+}[audioctx.sampleRate] || 4 << 10
 analyser.smoothingTimeConstant = .67
-analyser.connect(actx.destination)
+analyser.connect(audioctx.destination)
 
-const src = actx.createMediaElementSource(media)
+const src = audioctx.createMediaElementSource(media)
 src.connect(analyser)
 
 const min = -66
@@ -115,7 +115,7 @@ window.addEventListener('drop', e => {
   media.play()
   return false
 })
-window.addEventListener('click', () => actx.state !== 'running' && actx.resume(), {
+window.addEventListener('click', () => audioctx.state !== 'running' && audioctx.resume(), {
   once: true
 })
 
