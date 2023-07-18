@@ -1,16 +1,14 @@
-const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-
-const clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath')
-clipPath.setAttribute('id', 'clip')
-
-svg.appendChild(clipPath)
-
 const p = document.createElementNS('http://www.w3.org/2000/svg', 'path')
 p.setAttribute('stroke', 'white')
 p.setAttribute('stroke-width', '2')
 p.setAttribute('fill', 'transparent')
 
+const clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath')
+clipPath.setAttribute('id', 'clip')
 clipPath.appendChild(p)
+
+const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+svg.appendChild(clipPath)
 
 document.body.appendChild(svg)
 
