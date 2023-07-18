@@ -75,7 +75,7 @@ const spacing = 40;
 
     const y1 = arr[i]
     const y2 = arr[i + 1]
-    const y = (arr[i] + arr[i + 1]) / 2
+    const y = (y1 + y2) / 2
 
     d += !i ? `M${x1} ${y1} Q${x1} ${y1} ${x} ${y} T` : `${x} ${y} `
   }
