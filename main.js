@@ -84,22 +84,11 @@ const spacing = 40;
   p.setAttribute('d', d)
 })()
 
-const load = e => {
-  const raw = 'raw:'
-  const u = location.hash.substring(1)
-  if (u.startsWith(raw)) {
-    return media.src = u.substr(raw.length)
-  }
-  media.src = 'https://r.6f.io?u=' + u
-  media.poster = 'https://r.6f.io?thumbnail=true&u=' + u
-}
-
 const preventDefault = e => {
   e.preventDefault()
   return false
 }
 
-window.addEventListener('hashchange', load)
 window.addEventListener('dragover', preventDefault)
 window.addEventListener('dragenter', preventDefault)
 window.addEventListener('dragend', preventDefault)
@@ -118,8 +107,3 @@ window.addEventListener('drop', e => {
 window.addEventListener('click', () => audioctx.state !== 'running' && audioctx.resume(), {
   once: true
 })
-
-
-if (location.hash) {
-  load()
-}
