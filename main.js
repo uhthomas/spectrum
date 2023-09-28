@@ -95,9 +95,26 @@ const spacing = 40;
   p.setAttribute("d", d);
 })();
 
-const preventDefault = (e) => {
-  e.preventDefault();
-  return false;
+const resumeAudioContext = () => {
+  if (audioctx.state !== "running") {
+    audioctx.resume();
+  }
+};
+
+window.addEventListener("click", resumeAudioContext, {
+  once: true,
+});
+
+const preventDefault = (e) => e.preventDefault();
+
+const load = (files) => {
+  if (!files.length) {
+    return;
+  }
+
+  URL.revokeObjectURL(media.src);
+  media.src = URL.createObjectURL(files[0]);
+  media.play();
 };
 
 window.addEventListener("dragover", preventDefault);
@@ -106,19 +123,16 @@ window.addEventListener("dragend", preventDefault);
 window.addEventListener("dragleave", preventDefault);
 window.addEventListener("drop", (e) => {
   e.preventDefault();
-  const files = e.dataTransfer.files;
-  if (!files.length) {
-    return false;
-  }
-  URL.revokeObjectURL(media.src);
-  media.src = URL.createObjectURL(files[0]);
-  media.play();
-  return false;
+  load(e.dataTransfer.files);
 });
-window.addEventListener(
-  "click",
-  () => audioctx.state !== "running" && audioctx.resume(),
-  {
-    once: true,
+
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "l") {
+    return;
   }
-);
+
+  e.preventDefault();
+  selectfile.click();
+});
+
+selectfile.addEventListener("change", (e) => load(e.target.files));
