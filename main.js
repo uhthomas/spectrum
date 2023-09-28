@@ -105,7 +105,12 @@ window.addEventListener("click", resumeAudioContext, {
   once: true,
 });
 
-const preventDefault = (e) => e.preventDefault();
+const preventDefault = (e) => {
+  e.preventDefault();
+  if (e.dataTransfer) {
+    e.dataTransfer.dropEffect = "copy";
+  }
+};
 
 const load = (files) => {
   if (!files.length) {
