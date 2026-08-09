@@ -1,0 +1,29 @@
+[package]
+name = "spectrum-native"
+version = "0.1.0"
+edition = "2024"
+description = "Native real-time video player with the Spectrum audio visualizer"
+license = "MIT"
+
+[dependencies]
+ab_glyph = "0.2.32"
+anyhow = "1.0.104"
+bytemuck = { version = "1.25.2", features = ["derive"] }
+gstreamer = "0.25.2"
+gstreamer-app = "0.25.2"
+gstreamer-video = "0.25.2"
+pollster = "1.0.1"
+rustfft = "6.4.1"
+url = "2.5.8"
+wgpu = "30.0.0"
+winit = "0.30.13"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+raw-window-handle = "0.6.2"
+smithay-client-toolkit = { version = "0.19.2", default-features = false }
+wayland-backend = { version = "0.3.16", features = ["client_system"] }
+wayland-client = "0.31.15"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
