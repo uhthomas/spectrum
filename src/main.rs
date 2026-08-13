@@ -5,13 +5,12 @@ mod renderer;
 mod wayland_drop;
 
 use std::{
-    path::{Path, PathBuf},
     sync::Arc,
     time::{Duration, Instant},
 };
 
 use anyhow::{Context, Result};
-use media::MediaPlayer;
+use media::{MediaPlayer, file_uri, media_title, uri_from_argument};
 use renderer::{ControlAction, Renderer, SettingKey, SliderControl, SpectrumSettings};
 use winit::{
     application::ApplicationHandler,
@@ -28,18 +27,21 @@ const CONTROLS_FADE_TIME: Duration = Duration::from_millis(350);
 fn main() -> Result<()> {
     if std::env::args_os().any(|argument| argument == "--help" || argument == "-h") {
         println!(
-            "Usage: spectrum-native [MEDIA_FILE]\n\nDrop another file onto the window to load it.\nSpace: play/pause  Left/Right: seek 5s  F: fullscreen  Esc: quit"
+            "Usage: spectrum-native [MEDIA_FILE_OR_HTTP_URL]\n\nDrop another file or HTTP URL onto the window to load it.\nSpace: play/pause  Left/Right: seek 5s  F: fullscreen  Esc: quit"
         );
         return Ok(());
     }
 
     gstreamer::init().context("failed to initialize GStreamer")?;
-    let initial_path = std::env::args_os().nth(1).map(PathBuf::from);
+    let initial_uri = std::env::args_os()
+        .nth(1)
+        .map(uri_from_argument)
+        .transpose()?;
     let event_loop = EventLoop::<UserEvent>::with_user_event()
         .build()
         .context("failed to create the native event loop")?;
     event_loop.set_control_flow(ControlFlow::Wait);
-    let mut app = App::new(initial_path, event_loop.create_proxy());
+    let mut app = App::new(initial_uri, event_loop.create_proxy());
     event_loop
         .run_app(&mut app)
         .context("native event loop failed")
@@ -47,7 +49,7 @@ fn main() -> Result<()> {
 
 #[derive(Debug)]
 pub(crate) enum UserEvent {
-    DroppedFile(PathBuf),
+    DroppedMedia(url::Url),
     DropError(String),
 }
 
@@ -69,7 +71,7 @@ impl DragControl {
 }
 
 struct App {
-    initial_path: Option<PathBuf>,
+    initial_uri: Option<url::Url>,
     event_proxy: winit::event_loop::EventLoopProxy<UserEvent>,
     window: Option<Arc<Window>>,
     renderer: Option<Renderer>,
@@ -86,11 +88,11 @@ struct App {
 
 impl App {
     fn new(
-        initial_path: Option<PathBuf>,
+        initial_uri: Option<url::Url>,
         event_proxy: winit::event_loop::EventLoopProxy<UserEvent>,
     ) -> Self {
         Self {
-            initial_path,
+            initial_uri,
             event_proxy,
             window: None,
             renderer: None,
@@ -106,22 +108,18 @@ impl App {
         }
     }
 
-    fn load(&mut self, path: &Path) {
-        match MediaPlayer::open(path) {
+    fn load(&mut self, uri: &url::Url) {
+        match MediaPlayer::open(uri) {
             Ok(player) => {
                 if let Some(renderer) = &mut self.renderer {
                     renderer.reset_media();
                 }
                 self.media = Some(player);
                 if let Some(window) = &self.window {
-                    let name = path
-                        .file_name()
-                        .unwrap_or(path.as_os_str())
-                        .to_string_lossy();
-                    window.set_title(&format!("Spectrum — {name}"));
+                    window.set_title(&format!("Spectrum — {}", media_title(uri)));
                 }
             }
-            Err(error) => eprintln!("Could not load {}: {error:#}", path.display()),
+            Err(error) => eprintln!("Could not load {uri}: {error:#}"),
         }
     }
 
@@ -235,7 +233,7 @@ impl ApplicationHandler<UserEvent> for App {
         }
 
         let attributes = WindowAttributes::default()
-            .with_title("Spectrum — drop a media file here")
+            .with_title("Spectrum — drop a media file or HTTP URL here")
             .with_inner_size(LogicalSize::new(1280.0, 720.0));
         let window = match event_loop.create_window(attributes) {
             Ok(window) => Arc::new(window),
@@ -265,15 +263,15 @@ impl ApplicationHandler<UserEvent> for App {
             }
         }
 
-        if let Some(path) = self.initial_path.take() {
-            self.load(&path);
+        if let Some(uri) = self.initial_uri.take() {
+            self.load(&uri);
         }
     }
 
     fn user_event(&mut self, _event_loop: &ActiveEventLoop, event: UserEvent) {
         match event {
-            UserEvent::DroppedFile(path) => self.load(&path),
-            UserEvent::DropError(error) => eprintln!("Could not read dropped file: {error}"),
+            UserEvent::DroppedMedia(uri) => self.load(&uri),
+            UserEvent::DropError(error) => eprintln!("Could not read dropped media: {error}"),
         }
     }
 
@@ -302,7 +300,10 @@ impl ApplicationHandler<UserEvent> for App {
                     renderer.resize(window.inner_size(), scale_factor);
                 }
             }
-            WindowEvent::DroppedFile(path) => self.load(&path),
+            WindowEvent::DroppedFile(path) => match file_uri(&path) {
+                Ok(uri) => self.load(&uri),
+                Err(error) => eprintln!("Could not load {}: {error:#}", path.display()),
+            },
             WindowEvent::CursorMoved { position, .. } => {
                 self.show_controls();
                 self.cursor_position = Some(position);
@@ -342,7 +343,7 @@ impl ApplicationHandler<UserEvent> for App {
                     }
                 } else {
                     if let Some(DragControl::Seek(fraction)) = self.dragging_control.take()
-                        && let Some(media) = &self.media
+                        && let Some(media) = &mut self.media
                         && let Err(error) = media.seek_fraction(fraction)
                     {
                         eprintln!("Could not seek: {error:#}");
@@ -362,15 +363,15 @@ impl ApplicationHandler<UserEvent> for App {
                         self.toggle_playback();
                     }
                     Key::Named(NamedKey::ArrowLeft) => {
-                        if let Some(media) = &self.media
-                            && let Err(error) = media.seek_relative(-5)
+                        if let Some(media) = &mut self.media
+                            && let Err(error) = media.seek_relative(-5, event.repeat)
                         {
                             eprintln!("Could not seek: {error:#}");
                         }
                     }
                     Key::Named(NamedKey::ArrowRight) => {
-                        if let Some(media) = &self.media
-                            && let Err(error) = media.seek_relative(5)
+                        if let Some(media) = &mut self.media
+                            && let Err(error) = media.seek_relative(5, event.repeat)
                         {
                             eprintln!("Could not seek: {error:#}");
                         }

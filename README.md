@@ -11,11 +11,14 @@ and blurred video composite without a browser or DOM. It uses GStreamer for
 native decoding and audio-clock synchronization, and `wgpu` for rendering.
 
 It currently targets Linux and requires the GStreamer development libraries,
-`playbin3`, the standard audio/video conversion plugins, and an audio sink. Run
-it with a path or start it empty and drop a file onto the window:
+`playbin3`, the standard audio/video conversion plugins, and an audio sink.
+HTTP(S) playback also requires a compatible GStreamer source plugin such as
+`souphttpsrc`. Run it with a local path or HTTP(S) URL, or start it empty and
+drop either onto the window:
 
 ```sh
 cargo run --release -- /path/to/video.mkv
+cargo run --release -- 'https://media.example/video.mp4?token=secret'
 cargo run --release
 ```
 

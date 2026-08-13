@@ -1,5 +1,6 @@
 use std::{
     collections::VecDeque,
+    ffi::OsString,
     path::Path,
     sync::{
         Arc, Mutex,
@@ -15,6 +16,46 @@ use gstreamer_app as gst_app;
 use gstreamer_video as gst_video;
 
 use crate::analyser::Analyser;
+
+pub(crate) fn uri_from_argument(argument: OsString) -> Result<url::Url> {
+    if let Some(argument) = argument.to_str()
+        && (argument
+            .get(.."http://".len())
+            .is_some_and(|scheme| scheme.eq_ignore_ascii_case("http://"))
+            || argument
+                .get(.."https://".len())
+                .is_some_and(|scheme| scheme.eq_ignore_ascii_case("https://")))
+    {
+        return url::Url::parse(argument)
+            .with_context(|| format!("invalid HTTP media URL: {argument}"));
+    }
+
+    file_uri(Path::new(&argument))
+}
+
+pub(crate) fn file_uri(path: &Path) -> Result<url::Url> {
+    let canonical = path
+        .canonicalize()
+        .with_context(|| format!("failed to resolve {}", path.display()))?;
+    url::Url::from_file_path(&canonical)
+        .map_err(|_| anyhow!("failed to construct a file URI for {}", canonical.display()))
+}
+
+pub(crate) fn media_title(uri: &url::Url) -> String {
+    if let Ok(path) = uri.to_file_path() {
+        return path
+            .file_name()
+            .unwrap_or(path.as_os_str())
+            .to_string_lossy()
+            .into_owned();
+    }
+
+    uri.path_segments()
+        .and_then(|segments| segments.rev().find(|segment| !segment.is_empty()))
+        .or_else(|| uri.host_str())
+        .unwrap_or("HTTP media")
+        .to_owned()
+}
 
 #[derive(Clone)]
 pub struct VideoFrame {
@@ -54,17 +95,20 @@ pub struct MediaPlayer {
     playbin: gst::Element,
     pub shared: Arc<SharedMedia>,
     playing: bool,
+    relative_seek_target: Option<PendingSeek>,
     analysis_updated_at: Mutex<Instant>,
 }
 
-impl MediaPlayer {
-    pub fn open(path: &Path) -> Result<Self> {
-        let canonical = path
-            .canonicalize()
-            .with_context(|| format!("failed to resolve {}", path.display()))?;
-        let uri = url::Url::from_file_path(&canonical)
-            .map_err(|_| anyhow!("failed to construct a file URI for {}", canonical.display()))?;
+#[derive(Clone, Copy)]
+struct PendingSeek {
+    target_ns: u64,
+    requested_at: Instant,
+}
 
+const SEEK_SEQUENCE_GRACE: Duration = Duration::from_millis(250);
+
+impl MediaPlayer {
+    pub fn open(uri: &url::Url) -> Result<Self> {
         let shared = Arc::new(SharedMedia::default());
         let video_sink = make_video_sink(Arc::clone(&shared));
         let audio_filter = make_audio_filter(Arc::clone(&shared))?;
@@ -84,6 +128,7 @@ impl MediaPlayer {
             playbin,
             shared,
             playing: true,
+            relative_seek_target: None,
             analysis_updated_at: Mutex::new(Instant::now()),
         })
     }
@@ -106,25 +151,40 @@ impl MediaPlayer {
         self.playing
     }
 
-    pub fn seek_relative(&self, seconds: i64) -> Result<()> {
+    pub fn seek_relative(&mut self, seconds: i64, repeated: bool) -> Result<()> {
         let current = self
             .playbin
             .query_position::<gst::ClockTime>()
             .unwrap_or(gst::ClockTime::ZERO);
-        let current_ns = current.nseconds() as i128;
-        let delta_ns = seconds as i128 * 1_000_000_000;
-        let target_ns = (current_ns + delta_ns).max(0).min(u64::MAX as i128) as u64;
+        let now = Instant::now();
+        let pending_target = self
+            .relative_seek_target
+            .filter(|pending| {
+                repeated
+                    || now.saturating_duration_since(pending.requested_at) <= SEEK_SEQUENCE_GRACE
+            })
+            .map(|pending| pending.target_ns);
+        let duration_ns = self
+            .playbin
+            .query_duration::<gst::ClockTime>()
+            .map(gst::ClockTime::nseconds);
+        let target_ns =
+            relative_seek_target(current.nseconds(), pending_target, seconds, duration_ns);
         self.playbin
             .seek_simple(
-                gst::SeekFlags::FLUSH | gst::SeekFlags::KEY_UNIT,
+                gst::SeekFlags::FLUSH | gst::SeekFlags::ACCURATE,
                 gst::ClockTime::from_nseconds(target_ns),
             )
             .context("seek failed")?;
+        self.relative_seek_target = Some(PendingSeek {
+            target_ns,
+            requested_at: now,
+        });
         self.reset_analysis();
         Ok(())
     }
 
-    pub fn seek_fraction(&self, fraction: f64) -> Result<()> {
+    pub fn seek_fraction(&mut self, fraction: f64) -> Result<()> {
         let duration = self
             .playbin
             .query_duration::<gst::ClockTime>()
@@ -136,6 +196,10 @@ impl MediaPlayer {
                 gst::ClockTime::from_nseconds(target as u64),
             )
             .context("seek failed")?;
+        self.relative_seek_target = Some(PendingSeek {
+            target_ns: target as u64,
+            requested_at: Instant::now(),
+        });
         self.reset_analysis();
         Ok(())
     }
@@ -245,6 +309,17 @@ impl MediaPlayer {
         let frames = (elapsed.as_secs_f64() * analyser.sample_rate() as f64).round() as usize;
         analyser.push_silence(frames);
     }
+}
+
+fn relative_seek_target(
+    current_ns: u64,
+    pending_target_ns: Option<u64>,
+    seconds: i64,
+    duration_ns: Option<u64>,
+) -> u64 {
+    let base_ns = pending_target_ns.unwrap_or(current_ns) as i128;
+    let delta_ns = seconds as i128 * 1_000_000_000;
+    (base_ns + delta_ns).clamp(0, duration_ns.unwrap_or(u64::MAX) as i128) as u64
 }
 
 impl Drop for MediaPlayer {
@@ -393,4 +468,49 @@ fn make_audio_filter(shared: Arc<SharedMedia>) -> Result<gst::Bin> {
     )?;
 
     Ok(bin)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{relative_seek_target, uri_from_argument};
+    use std::ffi::OsString;
+
+    #[test]
+    fn parses_http_media_arguments() {
+        let http = "http://media.example/video?id=123";
+        let https = "https://media.example/live/playlist.m3u8?token=secret";
+
+        assert_eq!(
+            uri_from_argument(OsString::from(http)).unwrap(),
+            url::Url::parse(http).unwrap()
+        );
+        assert_eq!(
+            uri_from_argument(OsString::from(https)).unwrap(),
+            url::Url::parse(https).unwrap()
+        );
+    }
+
+    #[test]
+    fn converts_local_media_arguments_to_file_uris() {
+        let uri = uri_from_argument(OsString::from(".")).unwrap();
+        assert_eq!(uri.scheme(), "file");
+        assert!(uri.to_file_path().unwrap().is_absolute());
+    }
+
+    #[test]
+    fn repeated_relative_seeks_accumulate_from_the_pending_target() {
+        let second = 1_000_000_000;
+        assert_eq!(
+            relative_seek_target(10 * second, Some(15 * second), 5, Some(60 * second)),
+            20 * second
+        );
+        assert_eq!(
+            relative_seek_target(10 * second, Some(5 * second), -10, Some(60 * second)),
+            0
+        );
+        assert_eq!(
+            relative_seek_target(55 * second, None, 10, Some(60 * second)),
+            60 * second
+        );
+    }
 }
